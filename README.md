@@ -10,6 +10,8 @@
 
 TODO List
 
+- [x] 单机安装
+- [ ] 集群安装
 - [x] direct
 - [x] fanout
 - [x] topic
