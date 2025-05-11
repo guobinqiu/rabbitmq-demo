@@ -16,7 +16,8 @@ func main() {
 	defer ch.Close()
 
 	exchangeName := "sample_topic_exchange"
-	routingKey := "log.info" // topic交换机要求消费端的 binding key 通配符匹配生产端的 routing key
+	queueName := "sample_topic_queue"
+	bindingKey := "log.*" // 匹配 log.info、log.error 等
 
 	// 声明 topic 类型交换机
 	err = ch.ExchangeDeclare(
@@ -30,21 +31,43 @@ func main() {
 	)
 	failOnError(err, "声明交换机失败")
 
-	// 发送消息
-	body := "Hello Topic!"
-	err = ch.Publish(
-		exchangeName,
-		routingKey,
+	// 声明队列
+	q, err := ch.QueueDeclare(
+		queueName,
+		true,
 		false,
 		false,
-		amqp.Publishing{
-			DeliveryMode: amqp.Persistent,
-			ContentType:  "text/plain",
-			Body:         []byte(body),
-		},
+		false,
+		nil,
 	)
-	failOnError(err, "发送消息失败")
-	log.Printf(" [x] Sent %s", body)
+	failOnError(err, "声明队列失败")
+
+	// 绑定队列到交换机，使用通配符匹配 routing key
+	err = ch.QueueBind(
+		queueName,
+		bindingKey,
+		exchangeName,
+		false,
+		nil,
+	)
+	failOnError(err, "绑定队列失败")
+
+	// 消费消息
+	msgCh, err := ch.Consume(
+		q.Name,
+		"",
+		false,
+		false,
+		false,
+		false,
+		nil,
+	)
+	failOnError(err, "注册消费者失败")
+
+	for msg := range msgCh {
+		log.Printf("收到消息: %s", msg.Body)
+		msg.Ack(false)
+	}
 }
 
 func failOnError(err error, msg string) {
