@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	amqp "github.com/rabbitmq/amqp091-go"
+	"github.com/streadway/amqp"
 )
 
 func main() {
@@ -17,7 +17,7 @@ func main() {
 
 	exchangeName := "direct_logs"
 	queueName := "log_info"
-	bindingKey := "info" // direct交换机要求生产端的 routing key 和消费端的 binding key 要完全匹配
+	routingKey := "info" // direct交换机要求生产端的 routing key 和消费端的 binding key 要完全匹配
 
 	// 声明交换机
 	err = ch.ExchangeDeclare(
@@ -32,7 +32,7 @@ func main() {
 	failOnError(err, "声明交换机失败")
 
 	// 声明队列
-	q, err := ch.QueueDeclare(
+	_, err = ch.QueueDeclare(
 		queueName, // name
 		true,      // durable
 		false,     // autoDelete 临时队列可以设置成true
@@ -45,31 +45,28 @@ func main() {
 	// 绑定队列到交换机
 	err = ch.QueueBind(
 		queueName,    // name
-		bindingKey,   // key 关键配置
+		routingKey,   // key 关键配置
 		exchangeName, // exchange
 		false,        // noWait
 		nil,          // args
 	)
 	failOnError(err, "绑定队列失败")
 
-	// 接收消息
-	msgCh, err := ch.Consume(
-		q.Name, // queue
-		"",     // consumer 让RabbitMQ自动生成一个唯一的消费者标签
-		false,  // autoAck 消费者手动提交
-		false,  // exclusive
-		false,  // noLocal
-		false,  // noWait
-		nil,    // args
+	// 发送消息
+	body := "Hello Direct!"
+	err = ch.Publish(
+		exchangeName, // exchange
+		routingKey,   // key
+		false,        // mandatory
+		false,        // immediate
+		amqp.Publishing{
+			DeliveryMode: amqp.Persistent,
+			ContentType:  "text/plain",
+			Body:         []byte(body),
+		}, // msg
 	)
-	failOnError(err, "注册消费者失败")
-
-	// 处理消息
-	for msg := range msgCh {
-		log.Printf("Received a message: %s", msg.Body)
-		// TODO 消费端处理逻辑
-		msg.Ack(false)
-	}
+	failOnError(err, "发送消息失败")
+	log.Printf(" [x] Sent %s", body)
 }
 
 func failOnError(err error, msg string) {
