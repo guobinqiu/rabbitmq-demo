@@ -8,21 +8,21 @@ import (
 
 func main() {
 	conn, err := amqp.Dial("amqp://admin:111111@localhost:5672/")
-	failOnError(err, "Failed to connect to RabbitMQ")
+	failOnError(err, "连接失败")
 	defer conn.Close()
 
 	ch, err := conn.Channel()
-	failOnError(err, "Failed to open a channel")
+	failOnError(err, "打开通道失败")
 	defer ch.Close()
 
-	exchangeName := "direct_logs"
-	queueName := "log_info"
-	bindingKey := "info" // direct交换机要求生产端的 routing key 和消费端的 binding key 要完全匹配
+	exchangeName := "sample_direct_exchange"
+	queueName := "sample_direct_queue"
+	bindingKey := "log.info" // direct交换机要求消费端的 binding key 要完全匹配生产端的 routing key
 
 	// 声明交换机
 	err = ch.ExchangeDeclare(
 		exchangeName, // name
-		"direct",     // kind 关键配置 交换机类型为direct 点对点收发消息
+		"direct",     // kind 关键配置 交换机类型为direct 点对点类型
 		true,         // durable
 		false,        // autoDelete
 		false,        // internal
@@ -66,7 +66,7 @@ func main() {
 
 	// 处理消息
 	for msg := range msgCh {
-		log.Printf("Received a message: %s", msg.Body)
+		log.Printf("收到消息: %s", msg.Body)
 		// TODO 消费端处理逻辑
 		msg.Ack(false)
 	}

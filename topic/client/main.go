@@ -15,32 +15,33 @@ func main() {
 	failOnError(err, "打开通道失败")
 	defer ch.Close()
 
-	exchangeName := "sample_fanout_exchange"
+	exchangeName := "sample_topic_exchange"
+	routingKey := "log.info" // topic交换机要求消费端的 binding key 通配符匹配生产端的 routing key
 
-	// 声明 fanout 类型交换机
+	// 声明 topic 类型交换机
 	err = ch.ExchangeDeclare(
-		exchangeName, // name
-		"fanout",     // kind 关键配置 交换机类型为fanout 发布订阅类型
-		true,         // durable
-		false,        // autoDelete
-		false,        // internal
-		false,        // noWait
-		nil,          // args
+		exchangeName,
+		"topic",
+		true,
+		false,
+		false,
+		false,
+		nil,
 	)
 	failOnError(err, "声明交换机失败")
 
 	// 发送消息
-	body := "Hello Fanout!"
+	body := "Hello Topic!"
 	err = ch.Publish(
-		exchangeName, // exchange
-		"",           // key fanout 不需要 routing key
-		false,        // mandatory
-		false,        // immediate
+		exchangeName,
+		routingKey,
+		false,
+		false,
 		amqp.Publishing{
 			DeliveryMode: amqp.Persistent,
 			ContentType:  "text/plain",
 			Body:         []byte(body),
-		}, // msg
+		},
 	)
 	failOnError(err, "发送消息失败")
 	log.Printf(" [x] Sent %s", body)
