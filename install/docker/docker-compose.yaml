@@ -1,0 +1,17 @@
+version: '3'
+
+services:
+  rabbitmq:
+    image: "rabbitmq:3-management" # 使用带有管理插件的镜像
+    container_name: "rabbitmq"
+    ports:
+      - "5672:5672" # AMQP 端口
+      - "15672:15672" # 管理界面端口
+    environment:
+      RABBITMQ_DEFAULT_USER: "admin" # 设置默认用户
+      RABBITMQ_DEFAULT_PASS: "111111" # 设置默认密码
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq/ # 数据持久化
+
+volumes:
+  rabbitmq_data:
