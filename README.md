@@ -7,3 +7,12 @@
 | direct        | Exchange, Queue, QueueBind | Exchange, Queue, QueueBind | `binding key`要完全匹配`routing key`      |
 | fanout        | Exchange                   | Exchange, Queue, QueueBind | 不需要`binding key`和`routing key`        |
 | topic         | Exchange                   | Exchange, Queue, QueueBind | `bingding key`通过通配符匹配`routing key` |
+
+TODO List
+
+- [x] direct
+- [x] fanout
+- [x] topic
+- [ ] simulate-kafka-multi-partiions 模拟kafka的多分区
+- [ ] topic-base-exactly-once topic 消息精确一次
+
