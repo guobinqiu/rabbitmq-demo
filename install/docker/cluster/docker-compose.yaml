@@ -1,0 +1,38 @@
+services:
+  rabbitmq1:
+    image: "rabbitmq:3-management" # 使用带有管理插件的镜像
+    container_name: "rabbitmq1"
+    ports:
+      - "5672:5672" # AMQP 端口
+      - "15672:15672" # 管理界面端口
+    environment:
+      RABBITMQ_DEFAULT_USER: "admin" # 设置默认用户
+      RABBITMQ_DEFAULT_PASS: "111111" # 设置默认密码
+      RABBITMQ_ERLANG_COOKIE: "secretcookie"
+      RABBITMQ_NODENAME: "rabbit@rabbitmq1"
+
+  rabbitmq2:
+    image: "rabbitmq:3" # 使用不带管理插件的镜像
+    container_name: "rabbitmq2"
+    ports:
+      - "5673:5672"
+    environment:
+      RABBITMQ_DEFAULT_USER: "admin"
+      RABBITMQ_DEFAULT_PASS: "111111"
+      RABBITMQ_ERLANG_COOKIE: "secretcookie"
+      RABBITMQ_NODENAME: "rabbit@rabbitmq2"
+    depends_on:
+      - rabbitmq1
+
+  rabbitmq3:
+    image: "rabbitmq:3" # 使用不带管理插件的镜像
+    container_name: "rabbitmq3"
+    ports:
+      - "5674:5672"
+    environment:
+      RABBITMQ_DEFAULT_USER: "admin"
+      RABBITMQ_DEFAULT_PASS: "111111"
+      RABBITMQ_ERLANG_COOKIE: "secretcookie"
+      RABBITMQ_NODENAME: "rabbit@rabbitmq3"
+    depends_on:
+      - rabbitmq1
