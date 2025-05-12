@@ -16,12 +16,12 @@ func main() {
 	defer ch.Close()
 
 	exchangeName := "sample_direct_exchange"
-	routingKey := "log.info" // direct交换机要求消费端的 binding key 要完全匹配生产端的 routing key
+	routingKey := "log.info" // direct 交换机要求消费端的 binding key 要完全匹配生产端的 routing key
 
 	// 声明 direct 类型交换机
 	err = ch.ExchangeDeclare(
 		exchangeName, // name
-		"direct",     // kind 关键配置 交换机类型为direct 点对点类型
+		"direct",     // kind 关键配置 交换机类型为direct 点对点模式
 		true,         // durable
 		false,        // autoDelete
 		false,        // internal

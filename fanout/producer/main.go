@@ -20,7 +20,7 @@ func main() {
 	// 声明 fanout 类型交换机
 	err = ch.ExchangeDeclare(
 		exchangeName, // name
-		"fanout",     // kind 关键配置 交换机类型为fanout 发布订阅类型
+		"fanout",     // kind 关键配置 交换机类型为 fanout 发布订阅模式
 		true,         // durable
 		false,        // autoDelete
 		false,        // internal

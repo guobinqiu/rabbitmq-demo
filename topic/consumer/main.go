@@ -21,49 +21,50 @@ func main() {
 
 	// 声明 topic 类型交换机
 	err = ch.ExchangeDeclare(
-		exchangeName,
-		"topic",
-		true,
-		false,
-		false,
-		false,
-		nil,
+		exchangeName, // name
+		"topic",      // kind 关键配置 交换机类型为topic 发布订阅模式
+		true,         // durable
+		false,        // autoDelete
+		false,        // internal
+		false,        // noWait
+		nil,          // args
 	)
 	failOnError(err, "声明交换机失败")
 
 	// 声明队列
 	q, err := ch.QueueDeclare(
-		queueName,
-		true,
-		false,
-		false,
-		false,
-		nil,
+		queueName, // name
+		true,      // durable
+		false,     // autoDelete 临时队列可以设置成true
+		false,     // exclusive
+		false,     // noWait
+		nil,       // args
 	)
 	failOnError(err, "声明队列失败")
 
 	// 绑定队列到交换机，使用通配符匹配 routing key
 	err = ch.QueueBind(
-		queueName,
-		bindingKey,
-		exchangeName,
-		false,
-		nil,
+		queueName,    // name
+		bindingKey,   // key 关键配置
+		exchangeName, // exchange
+		false,        // noWait
+		nil,          // args
 	)
 	failOnError(err, "绑定队列失败")
 
-	// 消费消息
+	// 接收消息
 	msgCh, err := ch.Consume(
-		q.Name,
-		"",
-		false,
-		false,
-		false,
-		false,
-		nil,
+		q.Name, // queue
+		"",     // consumer 让RabbitMQ自动生成一个唯一的消费者标签
+		false,  // autoAck 消费者手动提交
+		false,  // exclusive
+		false,  // noLocal
+		false,  // noWait
+		nil,    // args
 	)
 	failOnError(err, "注册消费者失败")
 
+	// 处理消息
 	for msg := range msgCh {
 		log.Printf("收到消息: %s", msg.Body)
 		msg.Ack(false)
