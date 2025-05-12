@@ -9,10 +9,8 @@ import (
 
 // 模拟 Kafka 的分区机制：
 // 使用 direct 类型的 Exchange
-// 创建多个队列表示分区（如 queue-0、queue-1、queue-2）
-// 使用不同的 routing key（如 partition.0、partition.1、partition.2）
-// 一个 routing key 对应一个 queue
-// 每个队列由独立消费者处理，并行消费
+// 创建多个队列表示多个分区（如 queue-0、queue-1、queue-2）
+// 通过取余的方式实现 Round-Robin，将消息轮流发送到不同 routing key （如 partition.0、partition.1、partition.2）对应的队列
 func main() {
 	conn, err := amqp.Dial("amqp://admin:111111@localhost:5672/")
 	failOnError(err, "连接失败")
