@@ -18,7 +18,7 @@ func main() {
 	defer ch.Close()
 
 	exchangeName := "sample_simulate_kafka_exchange"
-	partitionNum := 10 // 设置分区数
+	partitionNum := 3 // 设置分区数
 
 	// 声明 direct 类型交换机
 	err = ch.ExchangeDeclare(
@@ -77,7 +77,7 @@ func main() {
 		go func() {
 			defer wg.Done()
 			for msg := range msgCh {
-				log.Printf("收到消息: %s", msg.Body)
+				log.Printf("收到消息: %s, queue: %s, routing key: %s ", msg.Body, queueName, bindingKey)
 				// TODO 消费端处理逻辑
 				msg.Ack(false)
 			}
