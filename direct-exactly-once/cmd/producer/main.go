@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -15,7 +16,12 @@ type Message struct {
 }
 
 func main() {
-	conn, err := amqp.Dial("amqp://admin:111111@localhost:5672/")
+	servers := []string{
+		"amqp://admin:111111@localhost:5672/",
+		"amqp://admin:111111@localhost:5673/",
+		"amqp://admin:111111@localhost:5674/",
+	}
+	conn, err := connect(servers)
 	failOnError(err, "连接失败")
 	defer conn.Close()
 
@@ -93,4 +99,16 @@ func failOnError(err error, msg string) {
 	if err != nil {
 		log.Fatalf("%s: %s", msg, err)
 	}
+}
+
+func connect(servers []string) (*amqp.Connection, error) {
+	var errors []string
+	for _, server := range servers {
+		conn, err := amqp.Dial(server)
+		if err == nil {
+			return conn, nil
+		}
+		errors = append(errors, err.Error())
+	}
+	return nil, fmt.Errorf("所有连接尝试失败:\n%s", strings.Join(errors, "\n"))
 }

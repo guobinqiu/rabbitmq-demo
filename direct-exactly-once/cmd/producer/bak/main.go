@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"sync"
+	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -79,13 +80,19 @@ func main() {
 	}
 
 	// 监听并处理消息确认
-	// 但是你不知道哪条失败了，当使用并行发送时，消息的 DeliveryTag 可能会乱序，所以最好串行发
+	// 但是你不知道哪条失败了，所以最好串行发
 	go func() {
 		for confirm := range confirms {
-			if confirm.Ack {
-				log.Printf("Message %d sent successfully\n", confirm.DeliveryTag)
-			} else {
-				log.Printf("Message %d failed to deliver\n", confirm.DeliveryTag)
+			select {
+			case <-time.After(3 * time.Second):
+				// TODO 这里你可以发送到死信队列 或做业务层面重试逻辑 或其他兜底机制
+			default:
+				if confirm.Ack {
+					log.Printf("Message %d sent successfully\n", confirm.DeliveryTag)
+				} else {
+					log.Printf("Message %d failed to deliver\n", confirm.DeliveryTag)
+					// TODO 这里你可以发送到死信队列 或做业务层面重试逻辑 或其他兜底机制
+				}
 			}
 		}
 	}()
