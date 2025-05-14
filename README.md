@@ -35,7 +35,7 @@ TODO List
 - [x] fanout
 - [x] topic
 - [x] simulate-kafka-multi-partiions 模拟kafka的多分区
-- [ ] topic-base-exactly-once topic 消息精确一次投递
+- [ ] direct-exactly-once topic 消息精确一次投递
 
 ## Install
 
