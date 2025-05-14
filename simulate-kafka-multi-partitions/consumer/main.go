@@ -36,7 +36,7 @@ func main() {
 	wg.Add(partitionNum)
 
 	// 每个队列由独立消费者处理，并行消费
-	for i := range partitionNum {
+	for i := 0; i < partitionNum; i++ {
 		queueName := fmt.Sprintf("sample_simulate_kafka_queue%d", i)
 		bindingKey := fmt.Sprintf("partition.%d", i) // direct 交换机要求消费端的 binding key 要完全匹配生产端的 routing key
 

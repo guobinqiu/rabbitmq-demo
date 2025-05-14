@@ -40,7 +40,7 @@ func main() {
 	failOnError(err, "声明交换机失败")
 
 	// 发送消息
-	for i := range 10 {
+	for i := 0; i < 10; i++ {
 		body := fmt.Sprintf("Hello Direct! - %d", i)
 		routingKey := fmt.Sprintf("partition.%d", i%partitionNum) // direct 交换机要求消费端的 binding key 要完全匹配生产端的 routing key
 		err = ch.Publish(
