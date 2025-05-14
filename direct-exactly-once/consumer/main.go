@@ -1,10 +1,19 @@
 package main
 
 import (
+	"database/sql"
+	"encoding/json"
 	"log"
+	"time"
 
+	_ "github.com/mattn/go-sqlite3"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
+
+type Message struct {
+	ID      string `json:"id"`
+	Content string `json:"content"`
+}
 
 func main() {
 	conn, err := amqp.Dial("amqp://admin:111111@localhost:5672/")
@@ -15,8 +24,8 @@ func main() {
 	failOnError(err, "打开通道失败")
 	defer ch.Close()
 
-	exchangeName := "sample_direct_exchange"
-	queueName := "sample_direct_queue"
+	exchangeName := "sample_direct_eos_exchange"
+	queueName := "sample_direct_eos_queue"
 	bindingKey := "log.info" // direct 交换机要求消费端的 binding key 要完全匹配生产端的 routing key
 
 	// 声明 direct 类型交换机
@@ -64,11 +73,85 @@ func main() {
 	)
 	failOnError(err, "注册消费者失败")
 
+	// 初始化 SQLite 数据库
+	db, err := sql.Open("sqlite3", "./consumer_state.db")
+	if err != nil {
+		failOnError(err, "Failed to open database")
+	}
+	defer db.Close()
+
+	// 创建幂等性校验表（如果不存在）
+	createTableSQL := `
+	CREATE TABLE IF NOT EXISTS consumed_messages (
+		id TEXT PRIMARY KEY
+	);
+	`
+	_, err = db.Exec(createTableSQL)
+	if err != nil {
+		failOnError(err, "Failed to create table")
+	}
+
 	// 处理消息
 	for msg := range msgCh {
-		log.Printf("收到消息: %s", msg.Body)
-		// TODO 消费端处理逻辑
-		msg.Ack(false)
+		var m Message
+
+		if err := json.Unmarshal(msg.Body, &m); err != nil {
+			log.Printf("JSON error: %v", err)
+			_ = msg.Nack(false, false) // 丢弃消息
+			continue
+		}
+
+		// ID 作为唯一标识
+		if m.ID == "" {
+			log.Println("Empty message ID, skipped")
+			_ = msg.Nack(false, false) // 丢弃消息
+			continue
+		}
+
+		// 幂等校验
+		var existingID string
+		err := db.QueryRow(`SELECT id FROM consumed_messages WHERE id = ?`, m.ID).Scan(&existingID)
+		if err != nil && err != sql.ErrNoRows {
+			log.Printf("DB query error: %v", err)
+			_ = msg.Nack(false, true) // 消息重入队 放到队尾
+			continue
+		}
+		if existingID != "" {
+			log.Printf("Duplicate message skipped (ID=%s, content=%s)", m.ID, m.Content)
+			_ = msg.Ack(false) // 很关键，告诉 rabbit 这条处理完了
+			continue
+		}
+
+		// 开启事务
+		tx, err := db.Begin()
+		if err != nil {
+			log.Printf("Failed to begin transaction: %v", err)
+			_ = msg.Nack(false, true)
+			continue
+		}
+
+		// 处理消息
+		log.Printf("Consumed message: %s", m.Content)
+		time.Sleep(time.Second)
+
+		// 处理成功后再写入幂等表
+		_, err = tx.Exec(`INSERT INTO consumed_messages (id) VALUES (?)`, m.ID)
+		if err != nil {
+			log.Printf("DB insert error: %v", err)
+			_ = tx.Rollback()
+			_ = msg.Nack(false, true)
+			continue
+		}
+
+		// 提交事务
+		if err := tx.Commit(); err != nil {
+			log.Printf("Commit error: %v", err)
+			_ = msg.Nack(false, true)
+			continue
+		}
+
+		// 消息确认
+		_ = msg.Ack(false)
 	}
 }
 
