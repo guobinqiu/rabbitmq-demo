@@ -38,12 +38,13 @@ func main() {
 	)
 	failOnError(err, "声明交换机失败")
 
-	err = ch.Confirm(false) // 开启 publisher confirm 模式
+	// 开启 publisher confirm 模式
+	err = ch.Confirm(false)
 	failOnError(err, "开启 Confirm 模式失败")
 
 	confirm := ch.NotifyPublish(make(chan amqp.Confirmation, 1))
 
-	// confirm并行发送nack后不能确定出问题的是哪一条消息 只能串行发 发一条确认一条
+	// confirm并行发送ack失败后不能确定出问题的是哪一条消息，所以最好串行发，每发一条确认一条
 	// 发送消息
 	for i := 0; i < 10; i++ {
 		message := Message{
@@ -57,6 +58,7 @@ func main() {
 			return
 		}
 
+		// 发一条
 		err = ch.Publish(
 			exchangeName, // exchange
 			routingKey,   // key
@@ -71,7 +73,7 @@ func main() {
 		failOnError(err, "发送消息失败")
 		log.Printf(" [x] Sent %s", body)
 
-		// 监听并处理消息确认
+		// 确认一条
 		select {
 		case confirmResult := <-confirm:
 			if confirmResult.Ack {

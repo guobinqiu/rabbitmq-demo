@@ -38,7 +38,8 @@ func main() {
 	)
 	failOnError(err, "声明交换机失败")
 
-	err = ch.Confirm(false) // 开启 publisher confirm 模式
+	// 开启 publisher confirm 模式
+	err = ch.Confirm(false)
 	failOnError(err, "开启 Confirm 模式失败")
 
 	confirms := ch.NotifyPublish(make(chan amqp.Confirmation, 10))
@@ -78,7 +79,7 @@ func main() {
 	}
 
 	// 监听并处理消息确认
-	// 但是你不知道哪条失败了 当使用并发发送时，消息的 DeliveryTag 可能会乱序，所以最好串行发送
+	// 但是你不知道哪条失败了，当使用并行发送时，消息的 DeliveryTag 可能会乱序，所以最好串行发
 	go func() {
 		for confirm := range confirms {
 			if confirm.Ack {
