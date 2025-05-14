@@ -27,7 +27,7 @@ ch.QueueBind(...)
 ch.Publish(...)
 ```
 
-TODO List
+## TODO List
 
 - [x] 单机安装
 - [x] 集群安装
@@ -35,7 +35,39 @@ TODO List
 - [x] fanout
 - [x] topic
 - [x] simulate-kafka-multi-partiions 模拟kafka的多分区
-- [ ] direct-exactly-once topic 消息精确一次投递
+- [x] direct-exactly-once topic 消息精确一次投递
+
+## 消息传递语义
+
+- 最多一次（At Most Once）
+  - 每条消息最多被处理一次，**可能丢失，但不会重复**。
+  - 发送消息后不等待确认，不做重试。
+  - **性能最高，可靠性最低**。
+  - 适用场景：日志采集、监控数据等可容忍丢失的业务。
+
+- 最少一次（At Least Once）
+  - 每条消息至少被处理一次，**不会丢失，但可能重复**。
+  - 生产端或消费者失败会触发重试。
+  - **需要消费者具备幂等性处理能力**（如去重逻辑）。
+  - 适用场景：数据采集、任务处理等对完整性要求较高但可容忍重复的业务。
+
+- 精确一次（Exactly Once）
+  - 每条消息被处理 **且仅处理一次**，**既不重复也不丢失**。
+  - Kafka 提供端到端事务机制实现。
+  - **性能开销大，实现复杂**。
+  - 适用场景：订单系统、金融交易、库存更新等对一致性要求极高的系统。
+
+RabbitMQ 里的精确一次性要点如下:
+
+- 生产端
+  - 启用`publisher confirms`
+  - 设置队列(`durable`)和消息(`DeliveryMode`)为持久化
+  - 增加失败重试机制(如死信队列)
+  - 处理反馈`Ack`的超时
+- 消费端
+  - 消费逻辑`幂等`(通过唯一的消息ID做去重)
+  - 设置`autoAck=false`并手动确认`Ack`
+  - 增加失败重试机制`Nack(false, true)`
 
 ## Install
 
@@ -56,7 +88,7 @@ services:
       RABBITMQ_DEFAULT_PASS: "111111" # 设置默认密码
 ```
 
-集群配置
+集群配置 (高可用)
 
 ```
 services:
@@ -143,3 +175,7 @@ http://localhost:15672
 
 用户名admin
 密码111111
+
+## 它的邻居Kafka
+
+> https://github.com/guobinqiu/kafka-demo
