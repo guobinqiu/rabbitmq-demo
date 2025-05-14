@@ -97,14 +97,14 @@ func main() {
 
 		if err := json.Unmarshal(msg.Body, &m); err != nil {
 			log.Printf("JSON error: %v", err)
-			_ = msg.Nack(false, false) // 丢弃消息
+			_ = msg.Nack(false, false) // 丢弃
 			continue
 		}
 
 		// ID 作为唯一标识
 		if m.ID == "" {
 			log.Println("Empty message ID, skipped")
-			_ = msg.Nack(false, false) // 丢弃消息
+			_ = msg.Nack(false, false) // 丢弃
 			continue
 		}
 
@@ -113,7 +113,7 @@ func main() {
 		err := db.QueryRow(`SELECT id FROM consumed_messages WHERE id = ?`, m.ID).Scan(&existingID)
 		if err != nil && err != sql.ErrNoRows {
 			log.Printf("DB query error: %v", err)
-			_ = msg.Nack(false, true) // 消息重入队 放到队尾
+			_ = msg.Nack(false, true) // 重新入队尾
 			continue
 		}
 		if existingID != "" {
